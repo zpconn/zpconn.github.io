@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Spherical alpha shapes · Zach Conn</title>
+<meta name="description" content="Concave hulls for points on a sphere, computed from a spherical Delaunay triangulation, which is just a 3D convex hull.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Spherical alpha shapes">
+<meta property="og:description" content="Concave hulls for points on a sphere, computed from a spherical Delaunay triangulation, which is just a 3D convex hull.">
+<meta name="theme-color" content="#F4F2EC">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 86.6"%3E%3Cpath fill="%239F4526" d="M50 0L43.75 10.83L56.25 10.83ZM43.75 10.83L37.5 21.65L50 21.65ZM56.25 10.83L50 21.65L62.5 21.65ZM37.5 21.65L31.25 32.48L43.75 32.48ZM31.25 32.48L25 43.3L37.5 43.3ZM43.75 32.48L37.5 43.3L50 43.3ZM62.5 21.65L56.25 32.48L68.75 32.48ZM56.25 32.48L50 43.3L62.5 43.3ZM68.75 32.48L62.5 43.3L75 43.3ZM25 43.3L18.75 54.13L31.25 54.13ZM18.75 54.13L12.5 64.95L25 64.95ZM31.25 54.13L25 64.95L37.5 64.95ZM12.5 64.95L6.25 75.78L18.75 75.78ZM6.25 75.78L0 86.6L12.5 86.6ZM18.75 75.78L12.5 86.6L25 86.6ZM37.5 64.95L31.25 75.78L43.75 75.78ZM31.25 75.78L25 86.6L37.5 86.6ZM43.75 75.78L37.5 86.6L50 86.6ZM75 43.3L68.75 54.13L81.25 54.13ZM68.75 54.13L62.5 64.95L75 64.95ZM81.25 54.13L75 64.95L87.5 64.95ZM62.5 64.95L56.25 75.78L68.75 75.78ZM56.25 75.78L50 86.6L62.5 86.6ZM68.75 75.78L62.5 86.6L75 86.6ZM87.5 64.95L81.25 75.78L93.75 75.78ZM81.25 75.78L75 86.6L87.5 86.6ZM93.75 75.78L87.5 86.6L100 86.6Z"/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Spectral+SC:wght@400;500&family=Spectral:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap">
+<script>try{var t=localStorage.getItem("zc-theme");if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+:root {
+  /* Layout: an offprint on warm paper. Up top, the argument beside one live figure; below, a narrow rail of small-caps labels against a single reading column, with a table and bibliography set the way a journal sets them. */
+  --paper: #F4F2EC;
+  --paper-2: #EBE7DD;
+  --ink: #1C1A16;
+  --ink-2: #4A463E;
+  --ink-3: #6E685D;
+  --rule: #D7D1C4;
+  --accent: #9F4526;
+  --fig-neg: #33556E;
+  --fig-mid: #D5CCBA;
+  --fig-pos: #B5532B;
+  --s1: #9F4526;
+  --s2: #2C5F94;
+  --display-weight: 300;
+  --smoothing: auto;
+
+  --serif: "Spectral", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --serif-sc: "Spectral SC", "Spectral", "Iowan Old Style", Georgia, serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  --fs-small: 0.875rem;
+  --fs-caption: 0.9375rem;
+  --fs-body: 1.1875rem;
+  --fs-lede: 1.3125rem;
+  --fs-h3: 1.3125rem;
+  --fs-h1: clamp(1.45rem, 1.1rem + 1.2vw, 2.05rem);
+
+  --rail: 10.5rem;
+  --gap: clamp(1.5rem, 1rem + 2.5vw, 3.5rem);
+  --block: clamp(3rem, 2rem + 4vw, 5.5rem);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #1F1E1C;
+    --paper-2: #292825;
+    --ink: #EEEAE0;
+    --ink-2: #C3BDB1;
+    --ink-3: #928C80;
+    --rule: #3B3934;
+    --accent: #E39470;
+    --fig-neg: #93B2CF;
+    --fig-mid: #4A453E;
+    --fig-pos: #EA9466; --s1: #D0784F; --s2: #5A90D6;
+    --display-weight: 400;
+    --smoothing: antialiased;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #1F1E1C;
+  --paper-2: #292825;
+  --ink: #EEEAE0;
+  --ink-2: #C3BDB1;
+  --ink-3: #928C80;
+  --rule: #3B3934;
+  --accent: #E39470;
+  --fig-neg: #93B2CF;
+  --fig-mid: #4A453E;
+  --fig-pos: #EA9466; --s1: #D0784F; --s2: #5A90D6;
+  --display-weight: 400;
+  --smoothing: antialiased;
+  color-scheme: dark;
+}
+
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font-family: var(--serif); font-size: var(--fs-body); line-height: 1.65; font-kerning: normal;
+  -webkit-font-smoothing: var(--smoothing);
+  padding: 0 max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px));
+}
+::selection { background: var(--accent); color: var(--paper); }
+a { color: inherit; text-decoration-line: underline; text-decoration-thickness: 1px; text-underline-offset: 0.2em; text-decoration-color: var(--rule); transition: text-decoration-color 0.2s ease; }
+a:hover { text-decoration-color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+.sc { font-family: var(--serif-sc); text-transform: lowercase; letter-spacing: 0.075em; font-weight: 400; }
+.wrap { max-width: 40rem; margin: 0 auto; padding: 1.75rem 0 4.5rem; }
+.top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem 1.5rem; }
+.brand { display: inline-flex; align-items: center; gap: 0.6rem; color: var(--ink); text-decoration: none; font-size: 1.125rem; font-weight: 500; letter-spacing: 0.01em; }
+.brand svg { width: 1.3rem; height: auto; fill: var(--accent); flex: none; }
+.back { font-size: 1.0625rem; color: var(--ink-2); text-decoration: none; }
+.back:hover { color: var(--ink); }
+.post-head { margin: clamp(2.5rem, 2rem + 3vw, 4.5rem) 0 2.25rem; }
+.kicker { margin: 0 0 0.85rem; color: var(--accent); font-size: 1.0625rem; }
+h1 { margin: 0; font-size: clamp(2rem, 1.5rem + 2vw, 2.75rem); font-weight: var(--display-weight); line-height: 1.15; letter-spacing: -0.012em; text-wrap: balance; }
+.date { margin: 1rem 0 0; font-family: var(--mono); font-size: 0.8125rem; color: var(--ink-3); }
+article p, article li { text-wrap: pretty; }
+article p { margin: 0 0 1.15rem; }
+article h4 { margin: 2.4rem 0 0.8rem; font-size: 1.25rem; font-weight: 500; line-height: 1.35; }
+article ol, article ul { margin: 0 0 1.15rem; padding-left: 1.5rem; }
+article li { margin: 0.35rem 0; }
+article strong { font-weight: 500; }
+code { font-family: var(--mono); font-size: 0.84em; }
+pre { margin: 0 0 1.3rem; padding: 0.95rem 1.15rem; background: var(--paper-2); border-radius: 6px; overflow-x: auto; line-height: 1.55; }
+pre code { font-size: 0.8125rem; }
+@font-face { font-family: "Latin Modern Math"; src: local("Latin Modern Math"), local("LatinModernMath-Regular"), url("../fonts/latinmodern-math.woff2") format("woff2"); font-display: swap; }
+math { font-size: 1.04em; font-family: "STIX Two Math", "Cambria Math", "Latin Modern Math", math; }
+math[display="block"] { display: block; margin: 1.3rem 0; overflow-x: auto; overflow-y: hidden; padding: 0.15rem 0; }
+.post-foot { margin-top: 3rem; padding-top: 1.25rem; border-top: 1px solid var(--rule); font-size: 0.9375rem; line-height: 1.55; color: var(--ink-3); }
+.post-foot p { margin: 0 0 0.5rem; }
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="top" aria-label="Site">
+    <a class="brand" href="../index.html"><svg viewBox="0 0 100 86.6" aria-hidden="true"><path d="M50 0L43.75 10.83L56.25 10.83ZM43.75 10.83L37.5 21.65L50 21.65ZM56.25 10.83L50 21.65L62.5 21.65ZM37.5 21.65L31.25 32.48L43.75 32.48ZM31.25 32.48L25 43.3L37.5 43.3ZM43.75 32.48L37.5 43.3L50 43.3ZM62.5 21.65L56.25 32.48L68.75 32.48ZM56.25 32.48L50 43.3L62.5 43.3ZM68.75 32.48L62.5 43.3L75 43.3ZM25 43.3L18.75 54.13L31.25 54.13ZM18.75 54.13L12.5 64.95L25 64.95ZM31.25 54.13L25 64.95L37.5 64.95ZM12.5 64.95L6.25 75.78L18.75 75.78ZM6.25 75.78L0 86.6L12.5 86.6ZM18.75 75.78L12.5 86.6L25 86.6ZM37.5 64.95L31.25 75.78L43.75 75.78ZM31.25 75.78L25 86.6L37.5 86.6ZM43.75 75.78L37.5 86.6L50 86.6ZM75 43.3L68.75 54.13L81.25 54.13ZM68.75 54.13L62.5 64.95L75 64.95ZM81.25 54.13L75 64.95L87.5 64.95ZM62.5 64.95L56.25 75.78L68.75 75.78ZM56.25 75.78L50 86.6L62.5 86.6ZM68.75 75.78L62.5 86.6L75 86.6ZM87.5 64.95L81.25 75.78L93.75 75.78ZM81.25 75.78L75 86.6L87.5 86.6ZM93.75 75.78L87.5 86.6L100 86.6Z"/></svg>Zach Conn</a>
+    <a class="back" href="../index.html#writing">← Earlier writing</a>
+  </nav>
+  <header class="post-head">
+    <p class="kicker sc">Earlier writing</p>
+    <h1>Spherical alpha shapes</h1>
+    <p class="date">May 20, 2014</p>
+  </header>
+  <article>
+<p>Suppose you are given a set of points on a surface, say a flat sheet of paper or a sphere. Your goal is to find a bounding polygon with the following properties:</p>
+<ol type="1">
+<li>The vertices of your polygon are a subset of the original set of points.</li>
+<li>Every point is contained in the polygon.</li>
+<li>The polygon, in some sense, characterizes the “shape” formed by the points on the surface.</li>
+</ol>
+<p>Of course, it is the third condition that makes this problem interesting. There isn’t one way to define what a characteristic shape might look like, and even if you do decide on a rigorous definition this is the sort of problem that can lead you down the rabbit hole of increasingly obtuse computational geometry algorithms.</p>
+<p>A naive solution which still might be acceptable in some situations would be to simply find the convex hull. There are well-known ways of doing this pretty efficiently (in <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>O</mi><mrow><mo form="prefix" stretchy="false" lspace="0em" rspace="0em">(</mo><mi>N</mi><mo>log</mo><mrow><mo form="prefix" stretchy="false" lspace="0em" rspace="0em">(</mo><mi>N</mi><mo form="postfix" stretchy="false" lspace="0em" rspace="0em">)</mo></mrow><mo form="postfix" stretchy="false" lspace="0em" rspace="0em">)</mo></mrow></mrow><annotation encoding="application/x-tex">O(N \log(N))</annotation></semantics></math> time, for <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>N</mi><annotation encoding="application/x-tex">N</annotation></semantics></math> points). But what if the points are uniformly distributed in a donut shape? A convex hull cannot detect the hole and therefore might be completely unsatisfactory depending on the application.</p>
+<p>What we need is a “concave hull.” Such a thing is not well-defined, though. Indeed, if we’re not careful, we might even accidentally include the minimal spanning tree in our set of possible hulls, as would happen if we sought a polygon of minimal area, for instance.</p>
+<p>Enter alpha shapes. For a given point set there corresponds a one-parameter family of bounding polygons. The parameter, α, which is a nonnegative real number, determines how “tight” the polygon is. Depending on the exact definition used, increasing or decreasing α causes the polygon to tend between two archetypes: the convex hull at one extreme and a spanning tree at the other.</p>
+<p>The formal definition of an alpha shape is quite interesting, but we’re not going to use it, because we don’t need it. For us it is sufficient to know that an alpha shape is always a subcomplex of the Delaunay triangulation of the convex hull of the set of points. If we know how to compute this triangulation, then we can find an alpha shape with only two extra steps:</p>
+<ol type="1">
+<li>Delete any triangles from the triangulation which are “too big,” a condition I define in the following very simple way. A triangle is “too big” if any of its edges is longer than α (some people, by convention, might prefer <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mi>/</mi><mi>α</mi></mrow><annotation encoding="application/x-tex">1/\alpha</annotation></semantics></math> here).</li>
+<li>What results is a triangulation of the alpha shape. We no longer need the interior geometry, so we merge the triangles to obtain just the bounding path.</li>
+</ol>
+<p>This is simple enough if our points reside in a plane. It gets even more interesting if our points are on a sphere (say the locations of all worldwide cities). In this case, we need the spherical Delaunay triangulation. A beautiful observation is that this is equivalent to the three-dimensional convex hull of the set of points in 3-space. With this in mind, the only other modification necessary is of course to use the spherical distance metric.</p>
+<p>The algorithm thus derived for computing spherical alpha shapes is the following: (1) compute the spherical Delaunay triangulation of the point set in question by finding its convex hull in 3-space; (2) delete from this triangulation any triangles which are too big according to the above criterion using the parameter <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>; (3) merge the resulting interior geometry to obtain the final alpha shape.</p>
+
+  </article>
+  <footer class="post-foot">
+    <p>First published on my old blog on May 20, 2014, and lightly corrected in 2026.</p>
+    <p><a href="../index.html#writing">← More earlier writing</a></p>
+  </footer>
+</div>
+</body>
+</html>

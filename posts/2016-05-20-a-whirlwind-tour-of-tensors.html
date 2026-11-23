@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>A whirlwind tour of tensors · Zach Conn</title>
+<meta name="description" content="One construction of the tensor product, and how the many definitions of a tensor in mathematics and physics come back to it.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="A whirlwind tour of tensors">
+<meta property="og:description" content="One construction of the tensor product, and how the many definitions of a tensor in mathematics and physics come back to it.">
+<meta name="theme-color" content="#F4F2EC">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 86.6"%3E%3Cpath fill="%239F4526" d="M50 0L43.75 10.83L56.25 10.83ZM43.75 10.83L37.5 21.65L50 21.65ZM56.25 10.83L50 21.65L62.5 21.65ZM37.5 21.65L31.25 32.48L43.75 32.48ZM31.25 32.48L25 43.3L37.5 43.3ZM43.75 32.48L37.5 43.3L50 43.3ZM62.5 21.65L56.25 32.48L68.75 32.48ZM56.25 32.48L50 43.3L62.5 43.3ZM68.75 32.48L62.5 43.3L75 43.3ZM25 43.3L18.75 54.13L31.25 54.13ZM18.75 54.13L12.5 64.95L25 64.95ZM31.25 54.13L25 64.95L37.5 64.95ZM12.5 64.95L6.25 75.78L18.75 75.78ZM6.25 75.78L0 86.6L12.5 86.6ZM18.75 75.78L12.5 86.6L25 86.6ZM37.5 64.95L31.25 75.78L43.75 75.78ZM31.25 75.78L25 86.6L37.5 86.6ZM43.75 75.78L37.5 86.6L50 86.6ZM75 43.3L68.75 54.13L81.25 54.13ZM68.75 54.13L62.5 64.95L75 64.95ZM81.25 54.13L75 64.95L87.5 64.95ZM62.5 64.95L56.25 75.78L68.75 75.78ZM56.25 75.78L50 86.6L62.5 86.6ZM68.75 75.78L62.5 86.6L75 86.6ZM87.5 64.95L81.25 75.78L93.75 75.78ZM81.25 75.78L75 86.6L87.5 86.6ZM93.75 75.78L87.5 86.6L100 86.6Z"/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Spectral+SC:wght@400;500&family=Spectral:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap">
+<script>try{var t=localStorage.getItem("zc-theme");if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+:root {
+  /* Layout: an offprint on warm paper. Up top, the argument beside one live figure; below, a narrow rail of small-caps labels against a single reading column, with a table and bibliography set the way a journal sets them. */
+  --paper: #F4F2EC;
+  --paper-2: #EBE7DD;
+  --ink: #1C1A16;
+  --ink-2: #4A463E;
+  --ink-3: #6E685D;
+  --rule: #D7D1C4;
+  --accent: #9F4526;
+  --fig-neg: #33556E;
+  --fig-mid: #D5CCBA;
+  --fig-pos: #B5532B;
+  --s1: #9F4526;
+  --s2: #2C5F94;
+  --display-weight: 300;
+  --smoothing: auto;
+
+  --serif: "Spectral", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --serif-sc: "Spectral SC", "Spectral", "Iowan Old Style", Georgia, serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  --fs-small: 0.875rem;
+  --fs-caption: 0.9375rem;
+  --fs-body: 1.1875rem;
+  --fs-lede: 1.3125rem;
+  --fs-h3: 1.3125rem;
+  --fs-h1: clamp(1.45rem, 1.1rem + 1.2vw, 2.05rem);
+
+  --rail: 10.5rem;
+  --gap: clamp(1.5rem, 1rem + 2.5vw, 3.5rem);
+  --block: clamp(3rem, 2rem + 4vw, 5.5rem);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #1F1E1C;
+    --paper-2: #292825;
+    --ink: #EEEAE0;
+    --ink-2: #C3BDB1;
+    --ink-3: #928C80;
+    --rule: #3B3934;
+    --accent: #E39470;
+    --fig-neg: #93B2CF;
+    --fig-mid: #4A453E;
+    --fig-pos: #EA9466; --s1: #D0784F; --s2: #5A90D6;
+    --display-weight: 400;
+    --smoothing: antialiased;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #1F1E1C;
+  --paper-2: #292825;
+  --ink: #EEEAE0;
+  --ink-2: #C3BDB1;
+  --ink-3: #928C80;
+  --rule: #3B3934;
+  --accent: #E39470;
+  --fig-neg: #93B2CF;
+  --fig-mid: #4A453E;
+  --fig-pos: #EA9466; --s1: #D0784F; --s2: #5A90D6;
+  --display-weight: 400;
+  --smoothing: antialiased;
+  color-scheme: dark;
+}
+
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font-family: var(--serif); font-size: var(--fs-body); line-height: 1.65; font-kerning: normal;
+  -webkit-font-smoothing: var(--smoothing);
+  padding: 0 max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px));
+}
+::selection { background: var(--accent); color: var(--paper); }
+a { color: inherit; text-decoration-line: underline; text-decoration-thickness: 1px; text-underline-offset: 0.2em; text-decoration-color: var(--rule); transition: text-decoration-color 0.2s ease; }
+a:hover { text-decoration-color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+.sc { font-family: var(--serif-sc); text-transform: lowercase; letter-spacing: 0.075em; font-weight: 400; }
+.wrap { max-width: 40rem; margin: 0 auto; padding: 1.75rem 0 4.5rem; }
+.top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem 1.5rem; }
+.brand { display: inline-flex; align-items: center; gap: 0.6rem; color: var(--ink); text-decoration: none; font-size: 1.125rem; font-weight: 500; letter-spacing: 0.01em; }
+.brand svg { width: 1.3rem; height: auto; fill: var(--accent); flex: none; }
+.back { font-size: 1.0625rem; color: var(--ink-2); text-decoration: none; }
+.back:hover { color: var(--ink); }
+.post-head { margin: clamp(2.5rem, 2rem + 3vw, 4.5rem) 0 2.25rem; }
+.kicker { margin: 0 0 0.85rem; color: var(--accent); font-size: 1.0625rem; }
+h1 { margin: 0; font-size: clamp(2rem, 1.5rem + 2vw, 2.75rem); font-weight: var(--display-weight); line-height: 1.15; letter-spacing: -0.012em; text-wrap: balance; }
+.date { margin: 1rem 0 0; font-family: var(--mono); font-size: 0.8125rem; color: var(--ink-3); }
+article p, article li { text-wrap: pretty; }
+article p { margin: 0 0 1.15rem; }
+article h4 { margin: 2.4rem 0 0.8rem; font-size: 1.25rem; font-weight: 500; line-height: 1.35; }
+article ol, article ul { margin: 0 0 1.15rem; padding-left: 1.5rem; }
+article li { margin: 0.35rem 0; }
+article strong { font-weight: 500; }
+code { font-family: var(--mono); font-size: 0.84em; }
+pre { margin: 0 0 1.3rem; padding: 0.95rem 1.15rem; background: var(--paper-2); border-radius: 6px; overflow-x: auto; line-height: 1.55; }
+pre code { font-size: 0.8125rem; }
+@font-face { font-family: "Latin Modern Math"; src: local("Latin Modern Math"), local("LatinModernMath-Regular"), url("../fonts/latinmodern-math.woff2") format("woff2"); font-display: swap; }
+math { font-size: 1.04em; font-family: "STIX Two Math", "Cambria Math", "Latin Modern Math", math; }
+math[display="block"] { display: block; margin: 1.3rem 0; overflow-x: auto; overflow-y: hidden; padding: 0.15rem 0; }
+.post-foot { margin-top: 3rem; padding-top: 1.25rem; border-top: 1px solid var(--rule); font-size: 0.9375rem; line-height: 1.55; color: var(--ink-3); }
+.post-foot p { margin: 0 0 0.5rem; }
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="top" aria-label="Site">
+    <a class="brand" href="../index.html"><svg viewBox="0 0 100 86.6" aria-hidden="true"><path d="M50 0L43.75 10.83L56.25 10.83ZM43.75 10.83L37.5 21.65L50 21.65ZM56.25 10.83L50 21.65L62.5 21.65ZM37.5 21.65L31.25 32.48L43.75 32.48ZM31.25 32.48L25 43.3L37.5 43.3ZM43.75 32.48L37.5 43.3L50 43.3ZM62.5 21.65L56.25 32.48L68.75 32.48ZM56.25 32.48L50 43.3L62.5 43.3ZM68.75 32.48L62.5 43.3L75 43.3ZM25 43.3L18.75 54.13L31.25 54.13ZM18.75 54.13L12.5 64.95L25 64.95ZM31.25 54.13L25 64.95L37.5 64.95ZM12.5 64.95L6.25 75.78L18.75 75.78ZM6.25 75.78L0 86.6L12.5 86.6ZM18.75 75.78L12.5 86.6L25 86.6ZM37.5 64.95L31.25 75.78L43.75 75.78ZM31.25 75.78L25 86.6L37.5 86.6ZM43.75 75.78L37.5 86.6L50 86.6ZM75 43.3L68.75 54.13L81.25 54.13ZM68.75 54.13L62.5 64.95L75 64.95ZM81.25 54.13L75 64.95L87.5 64.95ZM62.5 64.95L56.25 75.78L68.75 75.78ZM56.25 75.78L50 86.6L62.5 86.6ZM68.75 75.78L62.5 86.6L75 86.6ZM87.5 64.95L81.25 75.78L93.75 75.78ZM81.25 75.78L75 86.6L87.5 86.6ZM93.75 75.78L87.5 86.6L100 86.6Z"/></svg>Zach Conn</a>
+    <a class="back" href="../index.html#writing">← Earlier writing</a>
+  </nav>
+  <header class="post-head">
+    <p class="kicker sc">Earlier writing</p>
+    <h1>A whirlwind tour of tensors</h1>
+    <p class="date">May 20, 2016</p>
+  </header>
+  <article>
+<p>What follows is an unforgivingly fast and fairly sophisticated tour of tensors as they show up in modern mathematics and physics. The aim here is to present a unifying model of tensors which links together all the many different definitions and interpretations that show up in different pieces of literature. The notion of a tensor has been overloaded over time, so I hope to clarify how all the different formulations are in fact equivalent, but this cannot be done rigorously without diving in all the way.</p>
+<p>Tensors turn certain bilinear operations into linear operations. This is useful since linear maps are among the easiest objects in mathematics to study and understand.</p>
+<p>More precisely, suppose <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo>,</mo><mi>W</mi><mo>,</mo><mi>X</mi></mrow><annotation encoding="application/x-tex">V,W,X</annotation></semantics></math> are vector spaces and <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>f</mi><mo>:</mo><mi>V</mi><mo>×</mo><mi>W</mi><mo>→</mo><mi>X</mi></mrow><annotation encoding="application/x-tex">f:V\times W \rightarrow X</annotation></semantics></math> is a bilinear map. Using tensors, we can procure a <em>linear</em> map <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>g</mi><mo>:</mo><mi>M</mi><mo>→</mo><mi>X</mi></mrow><annotation encoding="application/x-tex">g : M \rightarrow X</annotation></semantics></math> which is in many respects the “same” as <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>f</mi><annotation encoding="application/x-tex">f</annotation></semantics></math>, where <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>M</mi><annotation encoding="application/x-tex">M</annotation></semantics></math> is a mystery space whose precise identity and nature we will deduce below.</p>
+<p>To construct <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>M</mi><annotation encoding="application/x-tex">M</annotation></semantics></math> and <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>g</mi><annotation encoding="application/x-tex">g</annotation></semantics></math>, let’s first go back to <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo>×</mo><mi>W</mi></mrow><annotation encoding="application/x-tex">V\times W</annotation></semantics></math>. <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>f</mi><annotation encoding="application/x-tex">f</annotation></semantics></math> is a bilinear map on this space, but we’d like to convert it to a linear map on some slightly different space. If you’re familiar with free objects, your intuition might suggest that we could begin with the free vector space generated by the <em>set</em> <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo>×</mo><mi>W</mi></mrow><annotation encoding="application/x-tex">V\times W</annotation></semantics></math>. Indeed, the universal property satisfied by free objects lets us extend <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>f</mi><annotation encoding="application/x-tex">f</annotation></semantics></math> from a map on the set <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo>×</mo><mi>W</mi></mrow><annotation encoding="application/x-tex">V\times W</annotation></semantics></math> to a <em>linear</em> map on the free vector space <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>F</mi><annotation encoding="application/x-tex">F</annotation></semantics></math>. Let’s call the extended map <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>f</mi><mi>′</mi></mrow><annotation encoding="application/x-tex">f&#39;</annotation></semantics></math>.</p>
+<p>The problem is that the free vector space over the Cartesian product <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo>×</mo><mi>W</mi></mrow><annotation encoding="application/x-tex">V\times W</annotation></semantics></math> is potentially almost incomprehensibly big. It’s much bigger than we need. So let’s see if there are any special relations we can introduce into this free vector space <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>F</mi><annotation encoding="application/x-tex">F</annotation></semantics></math> in order to collapse it into something more reasonable.</p>
+<p>We can write this free space as the direct sum</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>F</mi><mo>=</mo><msub><mo>⨁</mo><mrow><mrow><mo form="prefix" stretchy="false" lspace="0em" rspace="0em">(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo form="postfix" stretchy="false" lspace="0em" rspace="0em">)</mo></mrow><mo>∈</mo><mi>V</mi><mo>×</mo><mi>W</mi></mrow></msub><mi>ℝ</mi><msub><mi>δ</mi><mrow><mo form="prefix" stretchy="false" lspace="0em" rspace="0em">(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo form="postfix" stretchy="false" lspace="0em" rspace="0em">)</mo></mrow></msub></mrow><annotation encoding="application/x-tex">F = \bigoplus_{(x,y) \in V\times W} \mathbb{R} \delta_{(x,y)}</annotation></semantics></math></p>
+<p>where I have tacitly assumed that our vector spaces are defined over the field of real numbers.</p>
+<p>All we need to do is introduce the obvious bilinearity relations. We do this via the familiar machinery of quotient spaces. That is, we consider the subspace <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>D</mi><annotation encoding="application/x-tex">D</annotation></semantics></math> spanned by the relations <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>δ</mi><mrow><mo form="prefix" stretchy="false" lspace="0em" rspace="0em">(</mo><mi>x</mi><mo>+</mo><mi>z</mi><mo>,</mo><mi>y</mi><mo form="postfix" stretchy="false" lspace="0em" rspace="0em">)</mo></mrow></msub><mo>−</mo><msub><mi>δ</mi><mrow><mo form="prefix" stretchy="false" lspace="0em" rspace="0em">(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo form="postfix" stretchy="false" lspace="0em" rspace="0em">)</mo></mrow></msub><mo>−</mo><msub><mi>δ</mi><mrow><mo form="prefix" stretchy="false" lspace="0em" rspace="0em">(</mo><mi>z</mi><mo>,</mo><mi>y</mi><mo form="postfix" stretchy="false" lspace="0em" rspace="0em">)</mo></mrow></msub></mrow><annotation encoding="application/x-tex">\delta_{(x+z,y)} - \delta_{(x,y)} - \delta_{(z,y)}</annotation></semantics></math>, etc., and we compute the quotient space <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>F</mi><mi>/</mi><mi>D</mi></mrow><annotation encoding="application/x-tex">F/D</annotation></semantics></math>. It’s easy to check that the kernel of the extended linear map <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>f</mi><mi>′</mi></mrow><annotation encoding="application/x-tex">f&#39;</annotation></semantics></math> contains these generators of <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>D</mi><annotation encoding="application/x-tex">D</annotation></semantics></math> and thus <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>f</mi><mi>′</mi></mrow><annotation encoding="application/x-tex">f&#39;</annotation></semantics></math> is well-defined on <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>F</mi><mi>/</mi><mi>D</mi></mrow><annotation encoding="application/x-tex">F/D</annotation></semantics></math>.</p>
+<p>In practice, we write <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo>⊗</mo><mi>W</mi></mrow><annotation encoding="application/x-tex">V\otimes W</annotation></semantics></math> for the space <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>F</mi><mi>/</mi><mi>D</mi></mrow><annotation encoding="application/x-tex">F/D</annotation></semantics></math>, and we introduce a special map <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>⊗</mo><mo>:</mo><mi>V</mi><mo>×</mo><mi>W</mi><mo>→</mo><mi>V</mi><mo>⊗</mo><mi>W</mi></mrow><annotation encoding="application/x-tex">\otimes : V\times W \rightarrow V\otimes W</annotation></semantics></math> defined via <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>⊗</mo><mrow><mo form="prefix" stretchy="false" lspace="0em" rspace="0em">(</mo><mi>v</mi><mo>,</mo><mi>w</mi><mo form="postfix" stretchy="false" lspace="0em" rspace="0em">)</mo></mrow><mo>=</mo><msub><mi>δ</mi><mrow><mo form="prefix" stretchy="false" lspace="0em" rspace="0em">(</mo><mi>v</mi><mo>,</mo><mi>w</mi><mo form="postfix" stretchy="false" lspace="0em" rspace="0em">)</mo></mrow></msub><mrow><mspace width="0.333em"></mspace><mtext mathvariant="normal"> mod </mtext><mspace width="0.333em"></mspace></mrow><mi>D</mi></mrow><annotation encoding="application/x-tex">\otimes(v,w) = \delta_{(v,w)} \text{ mod } D</annotation></semantics></math>. We often write this map using infix notation instead as <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>v</mi><mo>⊗</mo><mi>w</mi></mrow><annotation encoding="application/x-tex">v\otimes w</annotation></semantics></math>.</p>
+<p>We can now finally state that <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>M</mi><mo>=</mo><mi>V</mi><mo>⊗</mo><mi>W</mi></mrow><annotation encoding="application/x-tex">M = V\otimes W</annotation></semantics></math>, and that <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>g</mi><annotation encoding="application/x-tex">g</annotation></semantics></math> is the map <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>f</mi><mi>′</mi></mrow><annotation encoding="application/x-tex">f&#39;</annotation></semantics></math> induces on <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo>⊗</mo><mi>W</mi></mrow><annotation encoding="application/x-tex">V\otimes W</annotation></semantics></math>, so that <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>f</mi><mo>=</mo><mi>g</mi><mo>∘</mo><mo>⊗</mo></mrow><annotation encoding="application/x-tex">f = g\circ \otimes</annotation></semantics></math>.</p>
+<p>Now at this point tensors show up in a lot of places and in a lot of forms. Many of the more unexpected places they pop up arise from the various tensor powers of a vector space: <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>V</mi><mrow><mo>⊗</mo><mi>k</mi></mrow></msup><annotation encoding="application/x-tex">V^{\otimes k}</annotation></semantics></math>. When a physicist speaks of a “contravariant rank <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math> tensor”, they really mean an entity that represents the collection of all possible coordinate representations of a specific element of <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>V</mi><mrow><mo>⊗</mo><mi>k</mi></mrow></msup><annotation encoding="application/x-tex">V^{\otimes k}</annotation></semantics></math>. In practice, they will refer to a <em>specific</em> coordinate representation as the tensor and will then decree that the tensor must transform in a particular contravariant way under change of coordinates. This transformation law is simply a statement of the natural relation automatically satisfied by two different coordinate representations of an element of <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>V</mi><mrow><mo>⊗</mo><mi>k</mi></mrow></msup><annotation encoding="application/x-tex">V^{\otimes k}</annotation></semantics></math>.</p>
+<p>To be a bit more precise about it, consider a rank 2 tensor over 3-space <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>ℝ</mi><mn>3</mn></msup><annotation encoding="application/x-tex">\mathbb{R}^3</annotation></semantics></math>. Select three basis vectors for 3-space: <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>x</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>z</mi></mrow><annotation encoding="application/x-tex">x,y,z</annotation></semantics></math>. Then a rank 2 tensor is a linear combination of the so-called elementary tensors <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>x</mi><mo>⊗</mo><mi>x</mi><mo>,</mo><mi>x</mi><mo>⊗</mo><mi>y</mi><mo>,</mo><mi>x</mi><mo>⊗</mo><mi>z</mi><mo>,</mo><mi>…</mi><mo>,</mo><mi>z</mi><mo>⊗</mo><mi>x</mi><mo>,</mo><mi>z</mi><mo>⊗</mo><mi>y</mi><mo>,</mo><mi>z</mi><mo>⊗</mo><mi>z</mi></mrow><annotation encoding="application/x-tex">x\otimes x, x\otimes y,x\otimes z, \dots, z\otimes x,z\otimes y,z\otimes z</annotation></semantics></math>. There are exactly 9 such elementary tensors, and so we can think of a general rank 2 tensor in 3-space as an assemblage of 9 numbers. Each of the 9 components of the tensor represents a quantity that has been associated with a particular <em>ordered pair</em> of basis vectors in the underlying vector space. This leads directly to a natural way to visualize such a tensor and immediately shows the relevance to physics.</p>
+<p>Similarly, when someone refers to a “covariant rank <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>l</mi><annotation encoding="application/x-tex">l</annotation></semantics></math> tensor”, they really mean the collection of all possible coordinate representations of a specific element of <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mrow><mo form="prefix" stretchy="false" lspace="0em" rspace="0em">(</mo><msup><mi>V</mi><mo>*</mo></msup><mo form="postfix" stretchy="false" lspace="0em" rspace="0em">)</mo></mrow><mrow><mo>⊗</mo><mi>l</mi></mrow></msup><annotation encoding="application/x-tex">(V^*)^{\otimes l}</annotation></semantics></math>, where <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>V</mi><mo>*</mo></msup><annotation encoding="application/x-tex">V^*</annotation></semantics></math> is the dual space of <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>V</mi><annotation encoding="application/x-tex">V</annotation></semantics></math>.</p>
+<p>You’ll also hear physicists sometimes speak of “mixed” tensors with <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math> contravariant indices and <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>l</mi><annotation encoding="application/x-tex">l</annotation></semantics></math> covariant indices. They’re referring to all coordinate representations of a specific element of <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>V</mi><mrow><mo>⊗</mo><mi>k</mi></mrow></msup><mo>⊗</mo><msup><mrow><mo form="prefix" stretchy="false" lspace="0em" rspace="0em">(</mo><msup><mi>V</mi><mo>*</mo></msup><mo form="postfix" stretchy="false" lspace="0em" rspace="0em">)</mo></mrow><mrow><mo>⊗</mo><mi>l</mi></mrow></msup></mrow><annotation encoding="application/x-tex">V^{\otimes k}\otimes (V^*)^{\otimes l}</annotation></semantics></math>.</p>
+<p>It’s also very common to hear a tensor referred to as a real-valued multilinear map that takes <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math> cotangent vector arguments and <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>l</mi><annotation encoding="application/x-tex">l</annotation></semantics></math> tangent vector arguments. If we denote the space of such maps as <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>T</mi><mi>k</mi><mi>l</mi></msubsup><annotation encoding="application/x-tex">T_k^l</annotation></semantics></math>, then this results directly from the important isomorphism, valid for finite-dimensional <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>V</mi><annotation encoding="application/x-tex">V</annotation></semantics></math>,</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>T</mi><mi>k</mi><mi>l</mi></msubsup><mo>≅</mo><msup><mrow><mo form="prefix" stretchy="false" lspace="0em" rspace="0em">(</mo><msup><mi>V</mi><mo>*</mo></msup><mo form="postfix" stretchy="false" lspace="0em" rspace="0em">)</mo></mrow><mrow><mo>⊗</mo><mi>l</mi></mrow></msup><mo>⊗</mo><msup><mi>V</mi><mrow><mo>⊗</mo><mi>k</mi></mrow></msup><mi>.</mi></mrow><annotation encoding="application/x-tex">T_k^l\cong (V^*)^{\otimes l}\otimes V^{\otimes k}.</annotation></semantics></math></p>
+<p>We can get even more exotic by considering the direct sum of all tensor powers of a single vector space <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>V</mi><annotation encoding="application/x-tex">V</annotation></semantics></math>, which we might call the <em>tensor algebra</em> over <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>V</mi><annotation encoding="application/x-tex">V</annotation></semantics></math>. The tensor algebra is naturally graded and admits some extremely useful quotient algebras, including the exterior algebra from which the theory of differential forms ultimately stems. From this point it’s a short (but intense) trip to some of the great pillars of modern mathematics, including de Rham cohomology connecting analysis, geometry, topology, and algebra.</p>
+
+  </article>
+  <footer class="post-foot">
+    <p>First published on my old blog on May 20, 2016, and lightly corrected in 2026.</p>
+    <p><a href="../index.html#writing">← More earlier writing</a></p>
+  </footer>
+</div>
+</body>
+</html>
